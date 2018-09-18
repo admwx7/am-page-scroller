@@ -1,0 +1,145 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="am-page-scroller">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+
+        --button-color: rgba(0, 0, 0, 0.4);
+        --disabled-button-color: rgba(0, 0, 0, 0.1);
+        --border-color: rgba(0, 0, 0, 0.4);
+        --border-shadow-color: rgba(0, 0, 0, 0.1);
+      }
+      #button-left {
+        border-right: 1px solid var(--border-color);
+        box-shadow: 1px 0 0 var(--border-shadow-color);
+      }
+      #button-left::after {
+        border-top-width: 2px;
+        border-left-width: 2px;
+      }
+      #button-right {
+        border-left: 1px solid var(--border-color);
+        box-shadow: -1px 0 0 var(--border-shadow-color);
+      }
+      #button-right::after {
+        border-bottom-width: 2px;
+        border-right-width: 2px;
+      }
+      .button {
+        position: relative;
+        flex: 0 0 44px;
+      }
+      .button:not([disabled]) {
+        cursor: pointer;
+      }
+      .button::after {
+        border-color: var(--button-color);
+        border-style: solid;
+        border-width: 0;
+      }
+      .button[disabled]::after {
+        border-color: var(--disabled-button-color);
+      }
+      .button::after {
+        position: absolute;
+        display: block;
+        top: 45%;
+        left: 65%;
+        transform:
+          rotate(-45deg)
+          translate(-50%, -50%);
+        content: "";
+        height: 24px;
+        width: 24px;
+      }
+      #scroller {
+        overflow-x: hidden;
+        margin: 6px 0;
+        flex: 1 1 auto;
+      }
+      #container {
+        display: flex;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        transition: linear 0.2s margin-left;
+      }
+    </style>
+
+    <div
+      id="button-left"
+      class="button"
+      data-increment="-1"
+      on-click="_increment"
+      disabled$="[[__minPage(page)]]"
+    ></div>
+    <div id="scroller">
+      <div id="container" style$="[[__calculatePosition(page)]]">
+        <slot></slot>
+      </div>
+    </div>
+    <div
+      id="button-right"
+      class="button"
+      data-increment="1"
+      on-click="_increment"
+      disabled$="[[__maxPage(page)]]"
+    ></div>
+  </template>
+
+  <script>
+    /**
+     * `am-page-scroller`
+     * A horizontal scroller element, designed to work with paginated API end-points
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class AmPageScroller extends Polymer.Element {
+      static get is() { return 'am-page-scroller'; }
+      static get properties() {
+        return {
+          page: {
+            type: Number,
+            value: 0,
+            observer: 'pageChanged'
+          },
+          maxPage: {
+            type: Number,
+            value: null,
+          },
+          minPage: {
+            type: Number,
+            value: 0,
+          }
+        };
+      }
+      pageChanged(page) {}
+      _increment({target}) {
+        if (target.hasAttribute('disabled')) return;
+
+        const newPage = this.page + Number(target.getAttribute('data-increment'));
+        if (newPage >= this.minPage && (!this.maxPage || newPage <= this.maxPage)) {
+          this.page = newPage;
+        }
+        console.log(this.$.container.offsetLeft + this.$.container.offsetWidth)
+        // TODO: prevent page incrementing if there are no more pages
+      }
+      __calculatePosition(page) {
+        return `margin-left: -${this.page}00%`;
+      }
+      __maxPage(page) {
+        return Boolean(this.maxPage && page >= this.maxPage);
+      }
+      __minPage(page) {
+        return page <= this.minPage;
+      }
+    }
+
+    window.customElements.define(AmPageScroller.is, AmPageScroller);
+  </script>
+</dom-module>
